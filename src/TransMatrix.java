@@ -8,10 +8,16 @@ import org.jsoup.*;
 import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
+/*
+ * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt
+ * TODO #3 Fix apostrophe bug (ex.: "lhorizon"): whether leave it or replace it with a whitespace (larousse.fr recognizes them both anyway)
+ * TODO #4 Lower-bound words length by 2 also in other parent-child way (not only getNextWord())
+ */
+
 public class TransMatrix {
 	
 	public static class TMatrix {
-		private HashMap<String,HashSet<String>> map;
+		private HashMap<String,HashSet<String>> map = new HashMap<String,HashSet<String>>();
 		
 		public void add (String parentWord, String childWord) {
 			if (parentWord != null) {	
@@ -21,7 +27,9 @@ public class TransMatrix {
 					vector = this.map.get(parentWord);
 				}
 				else {
-					vector = new HashSet<String>(); 
+					vector = new HashSet<String>();
+					System.out.println(parentWord);
+					System.out.println(this.map.size());
 				}
 				
 				vector.add(childWord);
@@ -38,8 +46,8 @@ public class TransMatrix {
 	
 	public static class Cursor {
 		public static Iterator<Element> iterator;
-		public static int page;
-		public static char letter;
+		public static int page = 1;
+		public static char letter = '`'; // Before 'a' for first call to getNextWord()
 	}
 	
 	public static boolean isNatureRelevant(String nature) {
@@ -50,8 +58,8 @@ public class TransMatrix {
 	}
 	
 	public static void mapText (String text, String parentWord) {
-		String cleanedText = text.replaceAll("\\p{Punct}", "").replaceAll("  ", " ");
-		String[] splitText = cleanedText.split(" ");
+		String cleanedText = text.replaceAll("\\p{Punct}", "");
+		String[] splitText = cleanedText.split(" +");
 		for (String word : splitText) {
 			if (!matrix.contains(word)) {
 				try {
@@ -67,7 +75,7 @@ public class TransMatrix {
 		}
 	}
 	
-	/*
+	/**
 	 * getNextWord() valable uniquement pour larousse.fr
 	 */
 	public static String getNextWord() throws IOException {
@@ -75,7 +83,7 @@ public class TransMatrix {
 		try {
 			Element item = Cursor.iterator.next();
 			word = item.select("a").attr("href")
-					.replaceAll("dictionnaires|francais|/|\\d", "");
+					.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
 		}
 		catch (NullPointerException e) {
 			Cursor.page++;
@@ -100,10 +108,9 @@ public class TransMatrix {
 			Cursor.iterator = doc.select("section.content.olf").first()
 					.select("li").iterator();
 			word =  Cursor.iterator.next().select("a").attr("href")
-					.replaceAll("dictionnaires|francais|/|\\d", "");
-			
+					.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
 		}
-		if (!matrix.contains(word)) {
+		if (word.length() > 1 && !matrix.contains(word)) {
 			return word;
 		}
 		else {
@@ -111,16 +118,19 @@ public class TransMatrix {
 		}
 	}
 	
-	/*
+	/**
 	 * getNatures valable uniquement pour larousse.fr
 	 */
 	public static void mapWord (String word, String parentWord) throws IOException {
+		System.out.println("debug: " + word);
 		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
 				+ word).get();
 		
 		Element header = doc.select("header.with-section").first();
 		
-		String realWord = header.select("h2.AdresseDefinition").first().text();
+		if (header == null) {return;}
+		
+		String realWord = header.select("h2.AdresseDefinition").first().text().replaceAll("^\\p{Z}+", ""); // &nbsp;
 		
 		boolean added = false;
 		
@@ -152,7 +162,7 @@ public class TransMatrix {
 		}
 	}
 	
-	/*
+	/**
 	 * mapDefs valable uniquement pour larousse.fr 
 	 */
 	public static void mapDefs (String word, Document doc) {
@@ -172,11 +182,10 @@ public class TransMatrix {
 		}
 	}
 	
-	/*
-	 * TODO #1 Deal with misspelled words
-	 * TODO #2 Add execution monitoring
-	 */
 	public static void main (String[] args) {
+		System.setProperty("http.proxyHost", Proxy.host);
+		System.setProperty("http.proxyPort", Proxy.port);
+		
 		try {
 			String startWord = getNextWord();
 			

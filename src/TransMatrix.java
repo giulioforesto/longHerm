@@ -9,7 +9,7 @@ import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
 /*
- * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt
+ * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt. SOLUTION: Deal with word *before* dealing with its definition
  * TODO #3 Fix apostrophe bug (ex.: "lhorizon"): whether leave it or replace it with a whitespace (larousse.fr recognizes them both anyway)
  * TODO #4 Lower-bound words length by 2 also in other parent-child way (not only getNextWord())
  */
@@ -29,7 +29,7 @@ public class TransMatrix {
 				else {
 					vector = new HashSet<String>();
 					System.out.println(parentWord);
-					System.out.println(this.map.size());
+					System.out.println(this.map.size()+1);
 				}
 				
 				vector.add(childWord);
@@ -58,7 +58,7 @@ public class TransMatrix {
 	}
 	
 	public static void mapText (String text, String parentWord) {
-		String cleanedText = text.replaceAll("\\p{Punct}", "");
+		String cleanedText = text.replaceAll("[\\p{Punct}&&[^']]", "");
 		String[] splitText = cleanedText.split(" +");
 		for (String word : splitText) {
 			if (!matrix.contains(word)) {
@@ -118,11 +118,8 @@ public class TransMatrix {
 		}
 	}
 	
-	/**
-	 * getNatures valable uniquement pour larousse.fr
-	 */
 	public static void mapWord (String word, String parentWord) throws IOException {
-		System.out.println("debug: " + word);
+		System.out.println("Mapping: " + word);
 		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
 				+ word).get();
 		

@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.regex.*;
 
 import org.jsoup.*;
@@ -10,8 +11,7 @@ import org.jsoup.select.Elements;
 
 /*
  * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt. SOLUTION: Deal with word *before* dealing with its definition
- * TODO #3 Fix apostrophe bug (ex.: "lhorizon"): whether leave it or replace it with a whitespace (larousse.fr recognizes them both anyway)
- * TODO #4 Lower-bound words length by 2 also in other parent-child way (not only getNextWord())
+ * TODO #3 Ignore "-" in cleaning up in getNextWord()
  */
 
 public class TransMatrix {
@@ -58,10 +58,10 @@ public class TransMatrix {
 	}
 	
 	public static void mapText (String text, String parentWord) {
-		String cleanedText = text.replaceAll("[\\p{Punct}&&[^']]", "");
+		String cleanedText = text.replaceAll("[\\p{Punct}&&[^']]", ""); // Apostrophe is kept because Larousse.fr understands it.
 		String[] splitText = cleanedText.split(" +");
 		for (String word : splitText) {
-			if (!matrix.contains(word)) {
+			if (word.length() > 1) {
 				try {
 					mapWord(word, parentWord);
 				}
@@ -79,13 +79,13 @@ public class TransMatrix {
 	 * getNextWord() valable uniquement pour larousse.fr
 	 */
 	public static String getNextWord() throws IOException {
-		String word;
+		Elements next;
 		try {
-			Element item = Cursor.iterator.next();
-			word = item.select("a").attr("href")
-					.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
+			next = Cursor.iterator.next().select("a");
+			System.out.println(next.attr("href"));
 		}
 		catch (NullPointerException e) {
+			System.out.println("here!");
 			Cursor.page++;
 			String URL = "http://www.larousse.fr/index/dictionnaires/francais/"
 					+ Cursor.letter + "/" + Cursor.page;
@@ -107,10 +107,12 @@ public class TransMatrix {
 			}
 			Cursor.iterator = doc.select("section.content.olf").first()
 					.select("li").iterator();
-			word =  Cursor.iterator.next().select("a").attr("href")
-					.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
+			next = Cursor.iterator.next().select("a");
 		}
-		if (word.length() > 1 && !matrix.contains(word)) {
+		String word =  next.attr("href")
+				.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
+		String wordAppearance = next.text().replaceAll("[a-zA-Z]+\u002e[a-zA-Z]*", "").replaceAll("[\\p{Punct}&&[^']]", "").replaceAll("[ \u00a0]$", "");
+		if (wordAppearance.length() > 1) {
 			return word;
 		}
 		else {
@@ -119,7 +121,7 @@ public class TransMatrix {
 	}
 	
 	public static void mapWord (String word, String parentWord) throws IOException {
-		System.out.println("Mapping: " + word);
+		System.out.println("Mapping: " + parentWord + ", " + word);
 		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
 				+ word).get();
 		
@@ -128,6 +130,8 @@ public class TransMatrix {
 		if (header == null) {return;}
 		
 		String realWord = header.select("h2.AdresseDefinition").first().text().replaceAll("^\\p{Z}+", ""); // &nbsp;
+		
+		if (matrix.contains(realWord)) {return;}
 		
 		boolean added = false;
 		

@@ -1,0 +1,16 @@
+bin/
+trash/
+.classpath
+.project
+.settings/
+target/
+classes/
+ml-100k/
+*.class
+*.xml
+*.war
+*.arff
+*.csv
+*.txt
+*.dat
+.metadata/

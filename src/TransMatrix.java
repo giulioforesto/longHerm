@@ -12,6 +12,8 @@ import org.jsoup.select.Elements;
 /*
  * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt. SOLUTION: Deal with word *before* dealing with its definition
  * TODO #3 Ignore "-" in cleaning up in getNextWord()
+ * TODO #4 Fix wordAppearance regex bug: see log 20140723_log_wordAppearance_1.txt.
+ * TODO #5 Explore NoSuchElementException bug: see log 20140723_log_wordAppearance_1.txt. Does not raise in master version.
  */
 
 public class TransMatrix {
@@ -82,10 +84,8 @@ public class TransMatrix {
 		Elements next;
 		try {
 			next = Cursor.iterator.next().select("a");
-			System.out.println(next.attr("href"));
 		}
 		catch (NullPointerException e) {
-			System.out.println("here!");
 			Cursor.page++;
 			String URL = "http://www.larousse.fr/index/dictionnaires/francais/"
 					+ Cursor.letter + "/" + Cursor.page;
@@ -109,9 +109,16 @@ public class TransMatrix {
 					.select("li").iterator();
 			next = Cursor.iterator.next().select("a");
 		}
+		System.out.println(next.attr("href"));
 		String word =  next.attr("href")
 				.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
-		String wordAppearance = next.text().replaceAll("[a-zA-Z]+\u002e[a-zA-Z]*", "").replaceAll("[\\p{Punct}&&[^']]", "").replaceAll("[ \u00a0]$", "");
+		System.out.println(next.text());
+		String wordAppearance1 = next.text().replaceAll("[a-zA-Z]+\u002e[a-zA-Z]*", "");
+		System.out.println(wordAppearance1);
+		String wordAppearance2 = wordAppearance1.replaceAll("[\\p{Punct}&&[^']]", "");
+		System.out.println(wordAppearance2);
+		String wordAppearance = wordAppearance2.replaceAll("[ \u00a0]$", "");
+		System.out.println(wordAppearance);
 		if (wordAppearance.length() > 1) {
 			return word;
 		}

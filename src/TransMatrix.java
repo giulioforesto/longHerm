@@ -13,7 +13,6 @@ import org.jsoup.select.Elements;
  * TODO #2 Solve looping after a while. See log 20140722_log_loop_1.txt. SOLUTION: Deal with word *before* dealing with its definition
  * TODO #3 Ignore "-" in cleaning up in getNextWord()
  * TODO #4 Fix wordAppearance regex bug: see log 20140723_log_wordAppearance_1.txt.
- * TODO #5 Explore NoSuchElementException bug: see log 20140723_log_wordAppearance_1.txt. Does not raise in master version.
  */
 
 public class TransMatrix {
@@ -85,7 +84,7 @@ public class TransMatrix {
 		try {
 			next = Cursor.iterator.next().select("a");
 		}
-		catch (NullPointerException e) {
+		catch (NoSuchElementException|NullPointerException e) {
 			Cursor.page++;
 			String URL = "http://www.larousse.fr/index/dictionnaires/francais/"
 					+ Cursor.letter + "/" + Cursor.page;

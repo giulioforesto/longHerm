@@ -1,8 +1,8 @@
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.Iterator;
 import java.util.regex.*;
 
 import org.jsoup.*;
@@ -15,17 +15,17 @@ import org.jsoup.select.Elements;
 public class TransMatrix {
 	
 	public static class TMatrix {
-		private HashMap<String,HashSet<String>> map = new HashMap<String,HashSet<String>>();
+		private TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
 		
 		public void add (String parentWord, String childWord) {
 			if (parentWord != null) {	
-				HashSet<String> vector;
+				TreeSet<String> vector;
 				
 				if (this.map.containsKey(parentWord)) {
 					vector = this.map.get(parentWord);
 				}
 				else {
-					vector = new HashSet<String>();
+					vector = new TreeSet<String>();
 					System.out.println(parentWord);
 					System.out.println(this.map.size()+1);
 				}
@@ -194,7 +194,7 @@ public class TransMatrix {
 		}
 	}
 	
-	public static void main (String[] args) {
+	public static TMatrix calculateMatrix () {
 		System.setProperty("http.proxyHost", Proxy.host);
 		System.setProperty("http.proxyPort", Proxy.port);
 		
@@ -209,5 +209,6 @@ public class TransMatrix {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		return matrix;
 	}
 }

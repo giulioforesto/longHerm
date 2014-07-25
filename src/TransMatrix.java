@@ -22,22 +22,25 @@ public class TransMatrix {
 			if (parentWord != null) {	
 				TreeSet<String> vector;
 				
-				if (this.map.containsKey(parentWord)) {
-					vector = this.map.get(parentWord);
+				if (map.containsKey(parentWord)) {
+					vector = map.get(parentWord);
 				}
 				else {
 					vector = new TreeSet<String>();
 					System.out.println(parentWord);
-					System.out.println(this.map.size()+1);
+					System.out.println(map.size()+1);
 				}
 				
-				vector.add(childWord);
-				this.map.put(parentWord, vector);
+				map.put(parentWord, vector);
+				
+				if (!map.containsKey(childWord)) {
+					map.put(childWord, new TreeSet<String>());
+				}
 			}
 		}
 		
 		public boolean contains (String word) {
-			return this.map.containsKey(word);
+			return map.containsKey(word);
 		}
 	}
 	
@@ -71,15 +74,9 @@ public class TransMatrix {
 					e.printStackTrace();
 				}
 			}
-			else {
-				matrix.add(parentWord, word);
-			}
 		}
 	}
 	
-	/**
-	 * getNextWord() valable uniquement pour larousse.fr
-	 */
 	private static String getNextWord() throws IOException {
 		Elements next;
 		try {
@@ -213,5 +210,9 @@ public class TransMatrix {
 		
 		System.out.println("Calculated transition matrix.");
 		return matrix;
+	}
+	
+	public static void main (String[] args) {
+		calculateMatrix();
 	}
 }

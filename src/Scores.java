@@ -75,6 +75,8 @@ public class Scores {
 	
 	private float[] scores;
 	
+	private float score = 0;
+	
 	private int size;
 	
 	/**
@@ -126,18 +128,28 @@ public class Scores {
 	/**
 	 * Returns the given word's score.
 	 * The result is stored for the next call for the same word.
+	 * A word's score is the shortest loop divided by the dictionary size.
 	 * @param word	word to get the score for.
 	 * @return the score of the word
 	 */
 	public float getScore(String word) {
-		float score = scores[index.indexOf(word)];
-		if (score != 0) return score;
+		float result = scores[index.indexOf(word)];
+		if (result != 0) return result;
 		else return calculateScore(index.indexOf(word));
 	}
 	
+	/**
+	 * Returns the dictionary's score.
+	 * The result is stored for the next call.
+	 * @return the score of the dictionary.
+	 */
 	public float getScore() {
-		// TODO Implement this
-		return 0;
+		if (score == 0) {
+			for (String word : index.sIndex) {
+				score += getScore(word); 
+			}
+		}
+		return score;
 	}
 	
 	/**

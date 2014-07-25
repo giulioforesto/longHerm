@@ -33,15 +33,11 @@ public class Test {
 	}
 	
 	public static void main (String[] args) {
-		Test t = new Test();
+		TreeSet<String> vector = new TreeSet<String>();
 		
-		Test.C c = new Test.C(1);
 		
-		C d = c;
 		
-		d.setI(2);
-		
-		System.out.println(c.getI());
+		System.out.println(vector.size());
 		
 //		System.setProperty("http.proxyHost", "172.20.0.9");
 //		System.setProperty("http.proxyPort", "3128");

@@ -10,12 +10,13 @@ import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
 /*
+ * 
  */
 
 public class TransMatrix {
 	
 	public static class TMatrix {
-		private TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
+		public TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
 		
 		public void add (String parentWord, String childWord) {
 			if (parentWord != null) {	
@@ -40,22 +41,22 @@ public class TransMatrix {
 		}
 	}
 	
-	public static TMatrix matrix = new TMatrix();
+	private static TMatrix matrix = new TMatrix();
 	
-	public static class Cursor {
+	private static class Cursor {
 		public static Iterator<Element> iterator;
 		public static int page = 1;
 		public static char letter = '`'; // Before 'a' for first call to getNextWord()
 	}
 	
-	public static boolean isNatureRelevant(String nature) {
+	private static boolean isNatureRelevant(String nature) {
 		String regex = "(adj|v(\u002e|erbe)|nom|n\u002e[mf]).*";
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(nature);
 		return matcher.matches();
 	}
 	
-	public static void mapText (String text, String parentWord) {
+	private static void mapText (String text, String parentWord) {
 		String cleanedText = text
 				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ")
 				.replaceAll("'[ \u00a0]+", "'")
@@ -79,7 +80,7 @@ public class TransMatrix {
 	/**
 	 * getNextWord() valable uniquement pour larousse.fr
 	 */
-	public static String getNextWord() throws IOException {
+	private static String getNextWord() throws IOException {
 		Elements next;
 		try {
 			next = Cursor.iterator.next().select("a");
@@ -124,7 +125,7 @@ public class TransMatrix {
 		}
 	}
 	
-	public static void mapWord (String word, String parentWord) throws IOException {
+	private static void mapWord (String word, String parentWord) throws IOException {
 		System.out.println("Mapping: " + parentWord + ", " + word);
 		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
 				+ word).get();
@@ -177,7 +178,7 @@ public class TransMatrix {
 	/**
 	 * mapDefs valable uniquement pour larousse.fr 
 	 */
-	public static void mapDefs (String word, Document doc) {
+	private static void mapDefs (String word, Document doc) {
 		Elements definitions = doc.select("li.DivisionDefinition");
 		Iterator<Element> iterator = definitions.iterator();
 		while (iterator.hasNext()) {
@@ -209,6 +210,8 @@ public class TransMatrix {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		System.out.println("Calculated transition matrix.");
 		return matrix;
 	}
 }

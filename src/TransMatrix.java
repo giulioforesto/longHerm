@@ -10,7 +10,7 @@ import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
 /*
- * 
+ * TODO Fix DFS. It seems it is now in BFS
  */
 
 public class TransMatrix {
@@ -19,7 +19,7 @@ public class TransMatrix {
 		public TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
 		
 		public void add (String parentWord, String childWord) {
-			if (parentWord != null) {	
+			if (parentWord != null) {
 				TreeSet<String> vector;
 				
 				if (map.containsKey(parentWord)) {
@@ -31,9 +31,12 @@ public class TransMatrix {
 					System.out.println(map.size()+1);
 				}
 				
+				vector.add(childWord);
 				map.put(parentWord, vector);
 				
 				if (!map.containsKey(childWord)) {
+					System.out.println(childWord);
+					System.out.println(map.size()+1);
 					map.put(childWord, new TreeSet<String>());
 				}
 			}
@@ -165,8 +168,7 @@ public class TransMatrix {
 					matrix.add(parentWord, realWord);
 				}
 				String URL = "http://www.larousse.fr" + item.attr("href");
-				Document newDoc;
-				newDoc = Jsoup.connect(URL).get();
+				Document newDoc = Jsoup.connect(URL).get();
 				mapDefs(realWord, newDoc);
 			}
 		}

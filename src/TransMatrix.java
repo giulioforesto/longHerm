@@ -56,7 +56,7 @@ public class TransMatrix {
 	}
 	
 	private static boolean isNatureRelevant(String nature) {
-		String regex = "(adj|v(\u002e|erbe)|nom|n\u002e[mf]).*";
+		String regex = "(adj|v(\u002e|erbe)|nom|n\u002e[mf]|adv).*";
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(nature);
 		return matcher.matches();

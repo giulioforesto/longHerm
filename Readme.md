@@ -20,7 +20,7 @@ Based on this hermeneutic length of a word for a given dictionary, the puropose 
 The **score function** that has been chosen for the moment is the simplest one:  
 If `w` is a word, `l` the length of its shortest loop and `N` the size of the dictionary:
 
-    S(w) = l_w/N
+    S(w) = l/N
 
 So the total **score of the dictionary** `S` would be the sum of the scores of the dictionary's words:
 
@@ -41,4 +41,4 @@ Once this matrix is built, the hermeneutic length of a given word will be easily
 - **TransMatrix.java** builds a `TreeMap<String,TreeSet<String>>` representation of the transition matrix. It is not factored yet and abundantly depends on the structure of the dictionary and of its HTML pages. 
 - **Scores.java** is a source-independent score calculator. It takes a `TreeMap<String,TreeSet<String>>` representation of the transition matrix and builds the associated boolean matrix, from which it can the calculate different values such as the mean number of relevant words in a definition, the score of a word or the score of the dictionary.
 
-###Relevance of a word  
+###Relevance of a word

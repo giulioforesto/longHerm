@@ -1,6 +1,8 @@
 package test;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,6 +15,10 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
+import java.net.URLEncoder;
+import java.net.URI;
+
+//client.util.URIUtil.encodeQuery;
 
 public class Test {
 	
@@ -32,12 +38,36 @@ public class Test {
 		}
 	}
 	
-	public static void main (String[] args) {
-		TreeSet<String> vector = new TreeSet<String>();
+	public static void main (String[] args) throws IOException, URISyntaxException {
 		
+//		System.setProperty("http.proxyHost", "172.20.0.9");
+//		System.setProperty("http.proxyPort", "3128");
+//		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
+//				+ "boite").get();
+//		
+//		String text = doc.select("li.DivisionDefinition").first().text();
 		
+		TreeSet<String> set = new TreeSet<String>();
 		
-		System.out.println(vector.size());
+		set.add("ciao");
+		set.add("ciao");
+		set.add("ciaop");
+		
+		System.out.println(set.size());
+		
+//		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
+//				+ word).get();
+		
+//		String cleanedText = text
+//				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ") //Removes useless semicolons.
+//				.replaceAll("[\\p{Punct}&&[^'-]]", ""); // Apostrophe is kept because Larousse.fr understands it.
+//		String[] splitText = cleanedText.split("[ \u00a0]+");
+		
+//		TreeSet<String> vector = new TreeSet<String>();
+//		
+//		
+//		
+//		System.out.println(vector.size());
 		
 //		System.setProperty("http.proxyHost", "172.20.0.9");
 //		System.setProperty("http.proxyPort", "3128");

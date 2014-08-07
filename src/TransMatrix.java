@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.net.URI;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -10,7 +11,6 @@ import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
 /*
- * TODO Fix DFS. It seems it is now in BFS
  */
 
 public class TransMatrix {
@@ -64,10 +64,9 @@ public class TransMatrix {
 	
 	private static void mapText (String text, String parentWord) {
 		String cleanedText = text
-				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ")
-				.replaceAll("'[ \u00a0]+", "'")
+				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ") //Removes useless hyphens.
 				.replaceAll("[\\p{Punct}&&[^'-]]", ""); // Apostrophe is kept because Larousse.fr understands it.
-		String[] splitText = cleanedText.split(" +");
+		String[] splitText = cleanedText.split("[ \u00a0]+");
 		for (String word : splitText) {
 			if (word.length() > 1) {
 				try {
@@ -127,12 +126,14 @@ public class TransMatrix {
 	
 	private static void mapWord (String word, String parentWord) throws IOException {
 		System.out.println("Mapping: " + parentWord + ", " + word);
-		Document doc = Jsoup.connect("http://www.larousse.fr/dictionnaires/francais/"
-				+ word).get();
+		
+		String URL = URI.create("http://www.larousse.fr/dictionnaires/francais/" + word).toASCIIString();
+		
+		Document doc = Jsoup.connect(URL).get();
 		
 		Element header = doc.select("header.with-section").first();
 		
-		if (header == null) {return;}
+		if (header == null) {return;} // Ignores a "not found" definition.
 		
 		String realWord = header.select("h2.AdresseDefinition").first().text().replaceAll("^\\p{Z}+", ""); // &nbsp;
 		
@@ -167,8 +168,8 @@ public class TransMatrix {
 				if (!added) {
 					matrix.add(parentWord, realWord);
 				}
-				String URL = "http://www.larousse.fr" + item.attr("href");
-				Document newDoc = Jsoup.connect(URL).get();
+				String childURL = "http://www.larousse.fr" + item.attr("href");
+				Document newDoc = Jsoup.connect(childURL).get();
 				mapDefs(realWord, newDoc);
 			}
 		}

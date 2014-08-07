@@ -137,16 +137,17 @@ public class TransMatrix {
 		
 		String realWord = header.select("h2.AdresseDefinition").first().text().replaceAll("^\\p{Z}+", ""); // &nbsp;
 		
-		if (matrix.contains(realWord)) {return;}
-		
 		boolean added = false;
+		boolean alreadyExists = matrix.contains(realWord); 
 		
 		// in main def
 		try {
 			if (isNatureRelevant(header.select("p.CatgramDefinition").first().text())) { // throws NullPointerException
 				matrix.add(parentWord,realWord);
 				added = true;
-				mapDefs(realWord, doc);
+				if (!alreadyExists) {
+					mapDefs(realWord, doc);
+				}
 			};
 		} catch (NullPointerException e) {}
 		
@@ -168,9 +169,11 @@ public class TransMatrix {
 				if (!added) {
 					matrix.add(parentWord, realWord);
 				}
-				String childURL = "http://www.larousse.fr" + item.attr("href");
-				Document newDoc = Jsoup.connect(childURL).get();
-				mapDefs(realWord, newDoc);
+				if (!alreadyExists) {
+					String childURL = "http://www.larousse.fr" + item.attr("href");
+					Document newDoc = Jsoup.connect(childURL).get();
+					mapDefs(realWord, newDoc);
+				}
 			}
 		}
 	}

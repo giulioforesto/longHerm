@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -48,6 +49,40 @@ public class TransMatrix {
 	}
 	
 	private static TMatrix matrix = new TMatrix();
+	
+	public static class Queue {
+		public Queue() {
+			
+		}
+		
+		private TreeMap<String,TreeSet<String>> queue;
+		
+		public void add (String parent, String child) {
+			TreeSet<String> vector;
+			if (queue.containsKey(parent)) {
+				vector = queue.get(parent);
+			} else {
+				vector = new TreeSet<String>();
+			}
+			vector.add(child);
+			queue.put(parent, vector);
+		}
+		
+		public String[] getNext() {
+			String[] result = new String[2];
+			Entry<String,TreeSet<String>> entry = queue.firstEntry();
+			TreeSet<String> set = entry.getValue();
+			
+			result[0] = entry.getKey();
+			result[1] = set.pollFirst();
+			
+			if (set.isEmpty()) {
+				queue.remove(result[0]);
+			}
+			
+			return result;
+		}
+	}
 	
 	private static class Cursor {
 		public static Iterator<Element> iterator;

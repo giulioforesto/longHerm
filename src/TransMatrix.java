@@ -12,12 +12,15 @@ import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
 
 /*
+ * TODO Check if mapWord (or sth else) does not discard some valid words.
  */
 
 public class TransMatrix {
 	
 	public static class TMatrix {
-		public TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
+		private TreeMap<String,TreeSet<String>> map = new TreeMap<String,TreeSet<String>>();
+		
+		public TreeMap<String,Boolean> checkedWords = new TreeMap<String,Boolean>();
 		
 		public void add (String parentWord, String childWord) {
 			if (parentWord != null) {
@@ -25,6 +28,7 @@ public class TransMatrix {
 				
 				if (map.containsKey(parentWord)) {
 					vector = map.get(parentWord);
+					System.out.println("Added child.");
 				}
 				else {
 					vector = new TreeSet<String>();
@@ -51,8 +55,9 @@ public class TransMatrix {
 	private static TMatrix matrix = new TMatrix();
 	
 	public static class Queue {
-		public Queue() {
-			
+		public Queue(String parent, String child) {
+			queue = new TreeMap<String,TreeSet<String>>();
+			add(parent, child);
 		}
 		
 		private TreeMap<String,TreeSet<String>> queue;
@@ -68,7 +73,7 @@ public class TransMatrix {
 			queue.put(parent, vector);
 		}
 		
-		public String[] getNext() {
+		public String[] pollFirst() {
 			String[] result = new String[2];
 			Entry<String,TreeSet<String>> entry = queue.firstEntry();
 			TreeSet<String> set = entry.getValue();
@@ -97,21 +102,15 @@ public class TransMatrix {
 		return matcher.matches();
 	}
 	
-	private static void mapText (String text, String parentWord) {
-		String cleanedText = text
-				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ") //Removes useless hyphens.
-				.replaceAll("[\\p{Punct}&&[^'-]]", ""); // Apostrophe is kept because Larousse.fr understands it.
-		String[] splitText = cleanedText.split("[ \u00a0]+");
-		for (String word : splitText) {
-			if (word.length() > 1) {
-				try {
-					mapWord(word, parentWord);
-				}
-				catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+	private static Document getDocFromPath(String wordURL) {
+		String URL = URI.create("http://www.larousse.fr" + wordURL).toASCIIString();
+		
+		try {
+			return Jsoup.connect(URL).get();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		return null;
 	}
 	
 	private static String getNextWord() throws IOException {
@@ -143,48 +142,65 @@ public class TransMatrix {
 					.select("li").iterator();
 			next = Cursor.iterator.next().select("a");
 		}
-		String word =  next.attr("href")
-				.replaceAll("dictionnaires|francais|/\\d+", "").replaceAll("/", "");
+
 		System.out.println(next.text());
 		String wordAppearance = next.text()
 				.replaceAll("[a-zA-Z]+\\u002e.*$", "")
 				.replaceAll("\\p{Punct}", "")
 				.replaceAll("[ \u00a0]$", "");
 		System.out.println(wordAppearance);
+		
 		if (wordAppearance.length() > 1) {
-			return word;
+			return next.attr("href");
 		}
 		else {
 			return getNextWord();
 		}
 	}
 	
-	private static void mapWord (String word, String parentWord) throws IOException {
-		System.out.println("Mapping: " + parentWord + ", " + word);
-		
-		String URL = URI.create("http://www.larousse.fr/dictionnaires/francais/" + word).toASCIIString();
-		
-		Document doc = Jsoup.connect(URL).get();
+	/**
+	 * 
+	 * @param wordURL The word URL path.
+	 * @param mapping Set the value to `true` for a real word mapping, in order to map the definition and build the matrix. Set to `false` for a simple word relevance checking.
+	 * @return Returns the real word if `mapping` is set to `false` if in one of the definitions it is relevant, `null` otherwise.  
+	 */
+	private static String mapWord (String wordURL, boolean mapping) {
+		Document doc = getDocFromPath(wordURL);
+		if (doc == null) {return null;}
 		
 		Element header = doc.select("header.with-section").first();
-		
-		if (header == null) {return;} // Ignores a "not found" definition.
+		if (header == null) {return null;} // Ignores a "not found" definition.
 		
 		String realWord = header.select("h2.AdresseDefinition").first().text().replaceAll("^\\p{Z}+", ""); // &nbsp;
 		
-		boolean added = false;
-		boolean alreadyExists = matrix.contains(realWord); 
+		if (!mapping && matrix.checkedWords.containsKey(realWord)) {
+			if (matrix.checkedWords.get(realWord)) {
+				return realWord;
+			} else {
+				return null;
+			}
+		}
+		
+		if (mapping) {
+			System.out.println("Mapping: " + realWord);
+		}
+		
+		boolean checked = false;
 		
 		// in main def
 		try {
 			if (isNatureRelevant(header.select("p.CatgramDefinition").first().text())) { // throws NullPointerException
-				matrix.add(parentWord,realWord);
-				added = true;
-				if (!alreadyExists) {
+				matrix.checkedWords.put(realWord, true);
+				checked = true;
+				if (mapping) {
 					mapDefs(realWord, doc);
+				} else {
+					return realWord;
 				}
 			};
-		} catch (NullPointerException e) {}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+		}
 		
 		// in left wrapper
 		Element leftWrapper = doc.select("div.wrapper-search").first();
@@ -192,7 +208,7 @@ public class TransMatrix {
 		try {
 			items = leftWrapper.select("a"); // throws NullPointerException
 		} 
-		catch (NullPointerException e) {return;}
+		catch (NullPointerException e) {return null;}
 		
 		Iterator<Element> iterator = items.iterator();
 		while (iterator.hasNext()) {
@@ -201,16 +217,27 @@ public class TransMatrix {
 			//Post-condition: item.text() must be "<exact word> <nature>"
 			String[] split = item.text().split(" ");
 			if (split.length == 2 && split[0] == realWord && isNatureRelevant(split[1])) {
-				if (!added) {
-					matrix.add(parentWord, realWord);
-				}
-				if (!alreadyExists) {
+				matrix.checkedWords.put(realWord, true);
+				checked = true;
+				if (mapping) {
 					String childURL = "http://www.larousse.fr" + item.attr("href");
-					Document newDoc = Jsoup.connect(childURL).get();
-					mapDefs(realWord, newDoc);
+					try {
+						Document newDoc = Jsoup.connect(childURL).get();
+						mapDefs(realWord, newDoc);
+					}
+					catch (IOException e) {
+						e.printStackTrace();
+					}
+				} else {
+					matrix.checkedWords.put(realWord, true);
+					return realWord;
 				}
 			}
 		}
+		if (!checked) {
+			matrix.checkedWords.put(realWord, false);
+		}
+		return null;
 	}
 	
 	/**
@@ -228,7 +255,24 @@ public class TransMatrix {
 				for (Node node : item.children()) {
 					node.remove();
 				}
-				mapText(item.text(), word);
+				mapText(word, item.text());
+			}
+		}
+	}
+	
+	private static void mapText (String parentWord, String text) {
+		String cleanedText = text
+				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ") //Removes useless hyphens.
+				.replaceAll("[\\p{Punct}&&[^'-]]", ""); // Apostrophe is kept because Larousse.fr understands it.
+		String[] splitText = cleanedText.split("[ \u00a0]+");
+		
+		for (String word : splitText) {
+			if (word.length() > 1) {
+				System.out.println("Mapping: " + parentWord + ", " + word);
+				String realWord = mapWord("/dictionnaires/francais/" + word, false);
+				if (realWord != null) {
+					matrix.add(parentWord,realWord);
+				}
 			}
 		}
 	}
@@ -238,11 +282,11 @@ public class TransMatrix {
 		System.setProperty("http.proxyPort", Proxy.port);
 		
 		try {
-			String startWord = getNextWord();
+			String wordURL = getNextWord();
 			
-			while(startWord != null) {
-				mapWord(startWord, null);
-				startWord = getNextWord();
+			while(wordURL != null) {
+				mapWord(wordURL, true);
+				wordURL = getNextWord();
 			}
 		}
 		catch (IOException e) {

@@ -1,0 +1,10 @@
+- dans
+- de
+- par
+- pour
+- le
+- la
+- un
+- une
+- l'
+- 

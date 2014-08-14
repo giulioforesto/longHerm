@@ -1,4 +1,3 @@
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -38,9 +37,17 @@ public class Scores {
 		}
 		
 		public float getMeanLineSize() {
-			// TODO Implement this
-			// Useful?
-			return 0;
+			float result = 0;
+			
+			for (int i = 0; i < size; i++) {
+				for (int j = 0; j < size; j++) {
+					if (matrix[i][j]) {
+						result++;
+					}
+				}
+			}
+			
+			return result/size;
 		}
 	}
 	
@@ -92,7 +99,7 @@ public class Scores {
 		for (TreeSet<String> set : matrix.values()) {
 			for (String word : set) {
 				if (!matrix.containsKey(word)) {
-					throw new Exception("A word of some definition is not mapped.");
+					throw new Exception("Word " + word + "of some definition is not mapped.");
 				}
 			}
 		}

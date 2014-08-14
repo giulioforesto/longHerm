@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -13,6 +12,7 @@ import org.jsoup.select.Elements;
 
 /*
  * TODO Check if mapWord (or sth else) does not discard some valid words.
+ * TODO Remove try/catch flow control.
  */
 
 public class TransMatrix {
@@ -52,48 +52,22 @@ public class TransMatrix {
 		}
 	}
 	
-	private static TMatrix matrix = new TMatrix();
+	public TMatrix matrix = new TMatrix();
 	
-	public static class Queue {
-		public Queue(String parent, String child) {
-			queue = new TreeMap<String,TreeSet<String>>();
-			add(parent, child);
-		}
-		
-		private TreeMap<String,TreeSet<String>> queue;
-		
-		public void add (String parent, String child) {
-			TreeSet<String> vector;
-			if (queue.containsKey(parent)) {
-				vector = queue.get(parent);
-			} else {
-				vector = new TreeSet<String>();
-			}
-			vector.add(child);
-			queue.put(parent, vector);
-		}
-		
-		public String[] pollFirst() {
-			String[] result = new String[2];
-			Entry<String,TreeSet<String>> entry = queue.firstEntry();
-			TreeSet<String> set = entry.getValue();
-			
-			result[0] = entry.getKey();
-			result[1] = set.pollFirst();
-			
-			if (set.isEmpty()) {
-				queue.remove(result[0]);
-			}
-			
-			return result;
-		}
-	}
+	private char startLetter;
+	private char stopLetter;
 	
 	private static class Cursor {
-		public static Iterator<Element> iterator;
-		public static int page = 1;
-		public static char letter = '`'; // Before 'a' for first call to getNextWord()
+		public Iterator<Element> iterator;
+		public int page = 1;
+		public char letter;
+		
+		public Cursor(char l) {
+			letter = (char) (l - 1); // for first call to gatNextWord()
+		}
 	}
+	
+	private Cursor cursor;
 	
 	private static boolean isNatureRelevant(String nature) {
 		String regex = "(adj|v(\u002e|erbe)|nom|n\u002e[mf]|adv).*";
@@ -113,34 +87,34 @@ public class TransMatrix {
 		return null;
 	}
 	
-	private static String getNextWord() throws IOException {
+	private String getNextWord() throws IOException {
 		Elements next;
 		try {
-			next = Cursor.iterator.next().select("a");
+			next = this.cursor.iterator.next().select("a");
 		}
-		catch (NoSuchElementException|NullPointerException e) { // Catches page ends and when Cursor is not initialized. 
-			Cursor.page++;
+		catch (NoSuchElementException|NullPointerException e) { // Catches page ends and when this.cursor is not initialized. 
+			this.cursor.page++;
 			String URL = "http://www.larousse.fr/index/dictionnaires/francais/"
-					+ Cursor.letter + "/" + Cursor.page;
+					+ this.cursor.letter + "/" + this.cursor.page;
 			Document doc;
 			try {
 				doc = Jsoup.connect(URL).get();
 			}
 			catch (HttpStatusException e2) {
-				if (Cursor.letter == 'z') {
+				if (this.cursor.letter == this.stopLetter) {
 					return null;
 				}
 				else {
-					Cursor.letter++;
-					Cursor.page = 1;
+					this.cursor.letter++;
+					this.cursor.page = 1;
 					URL = "http://www.larousse.fr/index/dictionnaires/francais/"
-							+ Cursor.letter + "/" + Cursor.page;
+							+ this.cursor.letter + "/" + this.cursor.page;
 					doc = Jsoup.connect(URL).get();
 				}
 			}
-			Cursor.iterator = doc.select("section.content.olf").first()
+			this.cursor.iterator = doc.select("section.content.olf").first()
 					.select("li").iterator();
-			next = Cursor.iterator.next().select("a");
+			next = this.cursor.iterator.next().select("a");
 		}
 
 		System.out.println(next.text());
@@ -164,7 +138,7 @@ public class TransMatrix {
 	 * @param mapping Set the value to `true` for a real word mapping, in order to map the definition and build the matrix. Set to `false` for a simple word relevance checking.
 	 * @return Returns the real word if `mapping` is set to `false` if in one of the definitions it is relevant, `null` otherwise.  
 	 */
-	private static String mapWord (String wordURL, boolean mapping) {
+	private String mapWord (String wordURL, boolean mapping) {
 		Document doc = getDocFromPath(wordURL);
 		if (doc == null) {return null;}
 		
@@ -243,7 +217,7 @@ public class TransMatrix {
 	/**
 	 * mapDefs valable uniquement pour larousse.fr 
 	 */
-	private static void mapDefs (String word, Document doc) {
+	private void mapDefs (String word, Document doc) {
 		Elements definitions = doc.select("li.DivisionDefinition");
 		Iterator<Element> iterator = definitions.iterator();
 		while (iterator.hasNext()) {
@@ -260,7 +234,7 @@ public class TransMatrix {
 		}
 	}
 	
-	private static void mapText (String parentWord, String text) {
+	private void mapText (String parentWord, String text) {
 		String cleanedText = text
 				.replaceAll("[ \u00a0]-|-[ \u00a0]", ". ") //Removes useless hyphens.
 				.replaceAll("[\\p{Punct}&&[^'-]]", ""); // Apostrophe is kept because Larousse.fr understands it.
@@ -277,9 +251,13 @@ public class TransMatrix {
 		}
 	}
 	
-	public static TMatrix calculateMatrix () {
+	public TMatrix calculateMatrix (char startLetter, char stopLetter) {
 		System.setProperty("http.proxyHost", Proxy.host);
 		System.setProperty("http.proxyPort", Proxy.port);
+		
+		this.startLetter = startLetter;
+		this.stopLetter = stopLetter;
+		this.cursor = new Cursor(this.startLetter);
 		
 		try {
 			String wordURL = getNextWord();
@@ -298,6 +276,7 @@ public class TransMatrix {
 	}
 	
 	public static void main (String[] args) {
-		calculateMatrix();
+		TransMatrix transMatrix = new TransMatrix();
+		transMatrix.calculateMatrix('a', 'z');
 	}
 }

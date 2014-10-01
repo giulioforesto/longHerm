@@ -42,4 +42,4 @@ Once this matrix is built, the hermeneutic length of a given word will be easily
 ###Code plan
 
 - **TransMatrix.java** builds a `TreeMap<String,TreeSet<String>>` representation of the transition matrix. It is not factored yet and abundantly depends on the structure of the dictionary and of its HTML pages. 
-- **Scores.java** is a source-independent score calculator. It takes a `TreeMap<String,TreeSet<String>>` representation of the transition matrix and builds the associated boolean matrix, from which it can the calculate different values such as the mean number of relevant words in a definition, the score of a word or the score of the dictionary.
+- **Scores.java** is a source-independent score calculator. It takes a `TreeMap<String,TreeSet<String>>` representation of the transition matrix and builds the associated boolean matrix, from which it can calculate different values such as the mean number of relevant words in a definition, the score of a word or the score of the dictionary.
